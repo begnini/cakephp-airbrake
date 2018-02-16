@@ -15,6 +15,6 @@
   "require": {
     "php": ">=5.3.0",
     "composer/installers": "*",
-    "dbtlr/php-airbrake": "1.*"
+    "airbrake/phpbrake": "0.5.2"
   }
 }

@@ -1,8 +1,8 @@
 <?php
 
-use Airbrake\Configuration as AirbrakeConfiguration;
-use Airbrake\Client as AirbrakeClient;
-use Airbrake\Notice as AirbrakeNotice;
+use Airbrake\Notifier as AirbrakeNotifier;
+use Airbrake\ErrorHandler as AirbrakeErrorHandler;
+use Airbrake\Instance as AirbrakeInstance;
 
 App::uses('Router', 'Routing');
 App::uses('Debugger', 'Utility');
@@ -50,8 +50,14 @@ class AirbrakeError extends ErrorHandler
 				}
 			}
 
-			$config = new AirbrakeConfiguration($apiKey, $options);
-			$client = new AirbrakeClient($config);
+			$notifier = new AirbrakeNotifier([
+				'projectId' => $projectId,
+				'projectKey' => $apiKey,				
+			]);
+
+			AirbrakeInstance::set($notifier);
+
+			$client = new AirbrakeErrorHandler($notifier);
 		}
 
 		return $client;
@@ -61,27 +67,10 @@ class AirbrakeError extends ErrorHandler
 	 * {@inheritDoc}
 	 */
 	public static function handleError($code, $description, $file = null, $line = null, $context = null) {
-		list($error, $log) = self::mapErrorCode($code);
-
-		$backtrace = debug_backtrace();
-		if (count($backtrace) > 1) {
-			array_shift($backtrace);
-		}
-
-		$trace = Debugger::trace(array('format' => 'points'));
-
-		$notice = new AirbrakeNotice();
-		$notice->load(array(
-			'errorClass' => $error,
-			'backtrace' => $backtrace,
-			'errorMessage' => $description,
-			'extraParameters' => array('CakeTrace' => $trace),
-		));
-
 		$client = static::getAirbrake();
-		$client->notify($notice);
 
-		return parent::handleError($code, $description, $file, $line, $context);
+		$client->onError($code, $description, $file, $line);
+		return parent::handleError($code, $description, $file, $line, $context);		
 	}
 
 	/**
@@ -89,8 +78,8 @@ class AirbrakeError extends ErrorHandler
 	 */
 	public static function handleException($exception) {
 		$client = static::getAirbrake();
-		$client->notifyOnException($exception);
 
-		return parent::handleException($exception);
+		$client->onException($exception);
+        parent::handleException($exception);
 	}
 }
