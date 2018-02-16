@@ -29,7 +29,8 @@ class AirbrakeError extends ErrorHandler
 		static $client = null;
 
 		if ($client === null) {
-			$apiKey = Configure::read('AirbrakeCake.apiKey');
+			$projectId = Configure::read('AirbrakeCake.projectId');
+			$apiKey = Configure::read('AirbrakeCake.apiKey');			
 			$options = Configure::read('AirbrakeCake.options');
 
 			if (!$options) {
@@ -81,5 +82,13 @@ class AirbrakeError extends ErrorHandler
 
 		$client->onException($exception);
         parent::handleException($exception);
+	}
+
+
+	public static function handleFatalError($code, $description, $file, $line) {
+		$client = static::getAirbrake();
+
+		$client->onError($code, $description, $file, $line);
+		return parent::handleFatalError($code, $description, $file, $line);
 	}
 }
