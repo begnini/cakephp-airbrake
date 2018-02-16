@@ -51,9 +51,15 @@ class AirbrakeError extends ErrorHandler
 				}
 			}
 
+			$env = 'dev';
+			if (isset($options['environmentName'])) {
+				$env = $options['environmentName'];
+			}
+
 			$notifier = new AirbrakeNotifier([
 				'projectId' => $projectId,
 				'projectKey' => $apiKey,				
+				'environment' => $env
 			]);
 
 			AirbrakeInstance::set($notifier);
